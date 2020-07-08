@@ -16,4 +16,5 @@ Pod::Spec.new do |s|
   s.source_files  = "ios/**/*.{h,m}"
 
   s.dependency 'React-Core'
+  s.dependency 'RNCryptor-objc', '~> 3.0'
 end

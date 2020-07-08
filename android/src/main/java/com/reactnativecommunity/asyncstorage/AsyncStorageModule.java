@@ -137,7 +137,7 @@ public final class AsyncStorageModule
    * (key, null) for the keys that haven't been found.
    */
   @ReactMethod
-  public void multiGet(final ReadableArray keys, final Callback callback) {
+  public void multiGet(final ReadableArray keys, final String secret, final Callback callback) {
     if (keys == null) {
       callback.invoke(AsyncStorageErrorUtil.getInvalidKeyError(null), null);
       return;
@@ -175,9 +175,13 @@ public final class AsyncStorageModule
 
             if (cursor.moveToFirst()) {
               do {
+                String key = cursor.getString(0);
+                String value = cursor.getString(1);
+                if (secret != null && !secret.isEmpty()) value = Crypto.decrypt(value, secret);
+
                 WritableArray row = Arguments.createArray();
-                row.pushString(cursor.getString(0));
-                row.pushString(cursor.getString(1));
+                row.pushString(key);
+                row.pushString(value);
                 data.pushArray(row);
                 keysRemaining.remove(cursor.getString(0));
               } while (cursor.moveToNext());
@@ -210,7 +214,7 @@ public final class AsyncStorageModule
    * The insertion will replace conflicting (key, value) pairs.
    */
   @ReactMethod
-  public void multiSet(final ReadableArray keyValueArray, final Callback callback) {
+  public void multiSet(final ReadableArray keyValueArray, final String secret, final Callback callback) {
     if (keyValueArray.size() == 0) {
       callback.invoke();
       return;
@@ -243,9 +247,13 @@ public final class AsyncStorageModule
               return;
             }
 
+            String key = keyValueArray.getArray(idx).getString(0);
+            String value = keyValueArray.getArray(idx).getString(1);
+            if (secret != null && !secret.isEmpty()) value = Crypto.encrypt(value, secret);
+
             statement.clearBindings();
-            statement.bindString(1, keyValueArray.getArray(idx).getString(0));
-            statement.bindString(2, keyValueArray.getArray(idx).getString(1));
+            statement.bindString(1, key);
+            statement.bindString(2, value);
             statement.execute();
           }
           mReactDatabaseSupplier.get().setTransactionSuccessful();
