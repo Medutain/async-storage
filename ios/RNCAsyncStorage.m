@@ -6,6 +6,7 @@
  */
 
 #import "RNCAsyncStorage.h"
+#import "Crypto.h"
 
 #import <Foundation/Foundation.h>
 
@@ -308,7 +309,7 @@ static void RCTStorageDirectoryMigrationCheck(NSString *fromStorageDirectory, NS
 
   // First migrate our deprecated path "Documents/.../RNCAsyncLocalStorage_V1" to "Documents/.../RCTAsyncLocalStorage_V1"
   RCTStorageDirectoryMigrationCheck(RCTCreateStorageDirectoryPath_deprecated(RCTOldStorageDirectory), RCTCreateStorageDirectoryPath_deprecated(RCTStorageDirectory), YES);
-  
+
   // Then migrate what's in "Documents/.../RCTAsyncLocalStorage_V1" to "Application Support/[bundleID]/RCTAsyncLocalStorage_V1"
   RCTStorageDirectoryMigrationCheck(RCTCreateStorageDirectoryPath_deprecated(RCTStorageDirectory), RCTCreateStorageDirectoryPath(RCTStorageDirectory), NO);
 
@@ -492,6 +493,7 @@ RCT_EXPORT_MODULE()
 }
 
 - (void)_multiGet:(NSArray<NSString *> *)keys
+           secret:(NSString *)secret
          callback:(RCTResponseSenderBlock)callback
            getter:(NSString *(^)(NSUInteger i, NSString *key, NSDictionary **errorOut))getValue
 {
@@ -501,6 +503,10 @@ RCT_EXPORT_MODULE()
     NSString *key = keys[i];
     id keyError;
     id value = getValue(i, key, &keyError);
+    if (secret != nil && secret.length != 0) {
+      value = [Crypto decrypt: value withSecret: secret];
+    }
+
     [result addObject:@[key, RCTNullIfNil(value)]];
     RCTAppendError(keyError, &errors);
   }
@@ -515,11 +521,13 @@ RCT_EXPORT_MODULE()
 #pragma mark - Exported JS Functions
 
 RCT_EXPORT_METHOD(multiGet:(NSArray<NSString *> *)keys
+                  secret:(NSString *)secret
                   callback:(RCTResponseSenderBlock)callback)
 {
   if (self.delegate != nil) {
     [self.delegate valuesForKeys:keys completion:^(NSArray<id<NSObject>> *valuesOrErrors) {
       [self _multiGet:keys
+               secret:secret
              callback:callback
                getter:^NSString *(NSUInteger i, NSString *key, NSDictionary **errorOut) {
                         id valueOrError = valuesOrErrors[i];
@@ -547,6 +555,7 @@ RCT_EXPORT_METHOD(multiGet:(NSArray<NSString *> *)keys
     return;
   }
   [self _multiGet:keys
+           secret:secret
          callback:callback
            getter:^(NSUInteger i, NSString *key, NSDictionary **errorOut) {
                     return [self _getValueForKey:key errorOut:errorOut];
@@ -554,8 +563,24 @@ RCT_EXPORT_METHOD(multiGet:(NSArray<NSString *> *)keys
 }
 
 RCT_EXPORT_METHOD(multiSet:(NSArray<NSArray<NSString *> *> *)kvPairs
+                  secret:(NSString *)secret
                   callback:(RCTResponseSenderBlock)callback)
 {
+  if (secret != nil && secret.length != 0) {
+    NSMutableArray<NSArray<NSString *> *> *encrypted = [NSMutableArray array];
+
+    for (NSArray<NSString *> *entry in kvPairs) {
+      NSMutableArray<NSString *> *kvPair = [NSMutableArray array];
+
+      [kvPair addObject:entry[0]];
+      [kvPair addObject:[Crypto encrypt: entry[1] withSecret: secret]];
+
+      [encrypted addObject:[kvPair copy]];
+    }
+
+    kvPairs = [encrypted copy];
+  }
+
   if (self.delegate != nil) {
     NSMutableArray<NSString *> *keys = [NSMutableArray arrayWithCapacity:kvPairs.count];
     NSMutableArray<NSString *> *values = [NSMutableArray arrayWithCapacity:kvPairs.count];

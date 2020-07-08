@@ -20,12 +20,12 @@ declare module '@react-native-community/async-storage' {
     /**
      * Fetches key and passes the result to callback, along with an Error if there is any.
      */
-    getItem(key: string, callback?: (error?: Error, result?: string) => void): Promise<string | null>;
+    getItem(key: string, secret: string | null, callback?: (error?: Error, result?: string) => void): Promise<string | null>;
 
     /**
      * Sets value for key and calls callback on completion, along with an Error if there is any
      */
-    setItem(key: string, value: string, callback?: (error?: Error) => void): Promise<void>;
+    setItem(key: string, value: string, secret: string | null, callback?: (error?: Error) => void): Promise<void>;
 
     removeItem(key: string, callback?: (error?: Error) => void): Promise<void>;
 
@@ -51,6 +51,7 @@ declare module '@react-native-community/async-storage' {
      */
     multiGet(
       keys: string[],
+      secret: string | null,
       callback?: (errors?: Error[], result?: [string, string | null][]) => void
     ): Promise<[string, string | null][]>;
 
@@ -59,7 +60,7 @@ declare module '@react-native-community/async-storage' {
      *
      * multiSet([['k1', 'val1'], ['k2', 'val2']], cb);
      */
-    multiSet(keyValuePairs: string[][], callback?: (errors?: Error[]) => void): Promise<void>;
+    multiSet(keyValuePairs: string[][], secret: string | null, callback?: (errors?: Error[]) => void): Promise<void>;
 
     /**
      * Delete all the keys in the keys array.
