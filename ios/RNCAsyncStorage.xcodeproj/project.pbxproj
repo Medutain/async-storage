@@ -12,6 +12,8 @@
 		747102F0243FFB7400D4F466 /* RNCAsyncStorage.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = B3E7B5881CC2AC0600A0062D /* RNCAsyncStorage.h */; };
 		747102F1243FFB7400D4F466 /* RNCAsyncStorageDelegate.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1990B9402233FE3A009E5EA1 /* RNCAsyncStorageDelegate.h */; };
 		B3E7B58A1CC2AC0600A0062D /* RNCAsyncStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = B3E7B5891CC2AC0600A0062D /* RNCAsyncStorage.m */; };
+		B6964B8B24B8961800C4E75C /* Crypto.m in Sources */ = {isa = PBXBuildFile; fileRef = B6964B8A24B8961800C4E75C /* Crypto.m */; };
+		B6964B8E24B89B8C00C4E75C /* Crypto.h in Headers */ = {isa = PBXBuildFile; fileRef = B6964B8D24B89B8C00C4E75C /* Crypto.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -33,6 +35,8 @@
 		1990B9402233FE3A009E5EA1 /* RNCAsyncStorageDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNCAsyncStorageDelegate.h; sourceTree = "<group>"; };
 		B3E7B5881CC2AC0600A0062D /* RNCAsyncStorage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNCAsyncStorage.h; sourceTree = "<group>"; };
 		B3E7B5891CC2AC0600A0062D /* RNCAsyncStorage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNCAsyncStorage.m; sourceTree = "<group>"; };
+		B6964B8A24B8961800C4E75C /* Crypto.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Crypto.m; sourceTree = "<group>"; };
+		B6964B8D24B89B8C00C4E75C /* Crypto.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Crypto.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +61,8 @@
 		58B511D21A9E6C8500147676 = {
 			isa = PBXGroup;
 			children = (
+				B6964B8D24B89B8C00C4E75C /* Crypto.h */,
+				B6964B8A24B8961800C4E75C /* Crypto.m */,
 				B3E7B5881CC2AC0600A0062D /* RNCAsyncStorage.h */,
 				B3E7B5891CC2AC0600A0062D /* RNCAsyncStorage.m */,
 				1990B9402233FE3A009E5EA1 /* RNCAsyncStorageDelegate.h */,
@@ -71,6 +77,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B6964B8E24B89B8C00C4E75C /* Crypto.h in Headers */,
 				1990B97A223993B0009E5EA1 /* RNCAsyncStorage.h in Headers */,
 				1990B97B223993B0009E5EA1 /* RNCAsyncStorageDelegate.h in Headers */,
 			);
@@ -134,6 +141,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B6964B8B24B8961800C4E75C /* Crypto.m in Sources */,
 				B3E7B58A1CC2AC0600A0062D /* RNCAsyncStorage.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

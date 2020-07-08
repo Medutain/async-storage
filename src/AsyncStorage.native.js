@@ -39,14 +39,6 @@ type MultiGetCallbackFunction = (
   result: ?$ReadOnlyArray<ReadOnlyArrayString>,
 ) => void;
 
-type MultiRequest = {|
-  keys: $ReadOnlyArray<string>,
-  callback: ?MultiGetCallbackFunction,
-  keyIndex: number,
-  resolve: ?(result?: Promise<?$ReadOnlyArray<ReadOnlyArrayString>>) => void,
-  reject: ?(error?: any) => void,
-|};
-
 function checkValidInput(usedKey: string, value: any) {
   const isValuePassed = arguments.length > 1;
 
@@ -77,10 +69,6 @@ function checkValidInput(usedKey: string, value: any) {
  * See http://reactnative.dev/docs/asyncstorage.html
  */
 const AsyncStorage = {
-  _getRequests: ([]: Array<MultiRequest>),
-  _getKeys: ([]: Array<string>),
-  _immediate: (null: ?number),
-
   /**
    * Fetches an item for a `key` and invokes a callback upon completion.
    *
@@ -88,11 +76,12 @@ const AsyncStorage = {
    */
   getItem: function(
     key: string,
+    secret: string | null,
     callback?: ?(error: ?Error, result: string | null) => void,
   ): Promise<string | null> {
     return new Promise((resolve, reject) => {
       checkValidInput(key);
-      RCTAsyncStorage.multiGet([key], function(errors, result) {
+      RCTAsyncStorage.multiGet([key], secret, function(errors, result) {
         // Unpack result to get value from [[key,value]]
         const value = result && result[0] && result[0][1] ? result[0][1] : null;
         const errs = convertErrors(errors);
@@ -114,11 +103,12 @@ const AsyncStorage = {
   setItem: function(
     key: string,
     value: string,
+    secret: string | null,
     callback?: ?(error: ?Error) => void,
   ): Promise<null> {
     return new Promise((resolve, reject) => {
       checkValidInput(key, value);
-      RCTAsyncStorage.multiSet([[key, value]], function(errors) {
+      RCTAsyncStorage.multiSet([[key, value]], secret, function(errors) {
         const errs = convertErrors(errors);
         callback && callback(errs && errs[0]);
         if (errs) {
@@ -223,52 +213,6 @@ const AsyncStorage = {
   },
 
   /**
-   * The following batched functions are useful for executing a lot of
-   * operations at once, allowing for native optimizations and provide the
-   * convenience of a single callback after all operations are complete.
-   *
-   * These functions return arrays of errors, potentially one for every key.
-   * For key-specific errors, the Error object will have a key property to
-   * indicate which key caused the error.
-   */
-
-  /**
-   * Flushes any pending requests using a single batch call to get the data.
-   *
-   * See http://reactnative.dev/docs/asyncstorage.html#flushgetrequests
-   * */
-  flushGetRequests: function(): void {
-    const getRequests = this._getRequests;
-    const getKeys = this._getKeys;
-
-    this._getRequests = [];
-    this._getKeys = [];
-
-    RCTAsyncStorage.multiGet(getKeys, function(errors, result) {
-      // Even though the runtime complexity of this is theoretically worse vs if we used a map,
-      // it's much, much faster in practice for the data sets we deal with (we avoid
-      // allocating result pair arrays). This was heavily benchmarked.
-      //
-      // Is there a way to avoid using the map but fix the bug in this breaking test?
-      // https://github.com/facebook/react-native/commit/8dd8ad76579d7feef34c014d387bf02065692264
-      const map = {};
-      result &&
-        result.forEach(([key, value]) => {
-          map[key] = value;
-          return value;
-        });
-      const reqLength = getRequests.length;
-      for (let i = 0; i < reqLength; i++) {
-        const request = getRequests[i];
-        const requestKeys = request.keys;
-        const requestResult = requestKeys.map(key => [key, map[key]]);
-        request.callback && request.callback(null, requestResult);
-        request.resolve && request.resolve(requestResult);
-      }
-    });
-  },
-
-  /**
    * This allows you to batch the fetching of items given an array of `key`
    * inputs. Your callback will be invoked with an array of corresponding
    * key-value pairs found.
@@ -277,38 +221,24 @@ const AsyncStorage = {
    */
   multiGet: function(
     keys: Array<string>,
+    secret: string | null,
     callback?: ?MultiGetCallbackFunction,
   ): Promise<?$ReadOnlyArray<ReadOnlyArrayString>> {
-    if (!this._immediate) {
-      this._immediate = setImmediate(() => {
-        this._immediate = null;
-        this.flushGetRequests();
+    return new Promise((resolve, reject) => {
+      keys.forEach(key => {
+        checkValidInput(key);
       });
-    }
 
-    const getRequest: MultiRequest = {
-      keys: keys,
-      callback: callback,
-      // do we need this?
-      keyIndex: this._getKeys.length,
-      resolve: null,
-      reject: null,
-    };
-
-    const promiseResult = new Promise((resolve, reject) => {
-      getRequest.resolve = resolve;
-      getRequest.reject = reject;
+      RCTAsyncStorage.multiGet(keys, secret, function(errors, result) {
+        const errs = convertErrors(errors);
+        callback && callback(errs, result);
+        if (errs) {
+          reject(errs);
+        } else {
+          resolve(result);
+        }
+      });
     });
-
-    this._getRequests.push(getRequest);
-    // avoid fetching duplicates
-    keys.forEach(key => {
-      if (this._getKeys.indexOf(key) === -1) {
-        this._getKeys.push(key);
-      }
-    });
-
-    return promiseResult;
   },
 
   /**
@@ -319,6 +249,7 @@ const AsyncStorage = {
    */
   multiSet: function(
     keyValuePairs: Array<Array<string>>,
+    secret: string | null,
     callback?: ?(errors: ?$ReadOnlyArray<?Error>) => void,
   ): Promise<null> {
     return new Promise((resolve, reject) => {
@@ -326,7 +257,7 @@ const AsyncStorage = {
         checkValidInput(key, value);
       });
 
-      RCTAsyncStorage.multiSet(keyValuePairs, function(errors) {
+      RCTAsyncStorage.multiSet(keyValuePairs, secret, function(errors) {
         const error = convertErrors(errors);
         callback && callback(error);
         if (error) {
